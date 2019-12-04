@@ -1,0 +1,2 @@
+ChannelType,Id,Address,User.UserId,User.UserAttributes.FirstName,Attributes.PreferredChannel
+EMAIL,MyEndpointId1,[EMAILADDRESSHERE],151,Jane,Yes

@@ -1,0 +1,155 @@
+# Amazon Pinpoint Campaign Hook Template
+#
+# author: rjlowe@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys a Lambda Hook configuration for Amazon Pinpoint
+
+Parameters:
+  ProjectId:
+    Type: String
+    Description: Project ID from Amazon Pinpoint
+  PersonalizeCampaignArn:
+    Type: String
+    default: "arn:aws:personalize:us-west-2:250935282016:campaign/car-hrnn"
+    Description: Full ARN of the configured Personalize Campaign
+
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        -
+          PolicyName: "LambdaExecutionPolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              -
+                Effect: "Allow"
+                Action: "personalize:GetRecommendations"
+                Resource: !Ref PersonalizeCampaignArn
+              -
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+
+  PinpointApplicationSettings:
+    Type: AWS::Pinpoint::ApplicationSettings
+    Properties:
+      ApplicationId: !Ref ProjectId
+      CampaignHook:
+        LambdaFunctionName: !GetAtt LambdaFunction.Arn
+        Mode: 'FILTER'
+    DependsOn: LambdaPermission
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: !Sub 'pinpoint.${AWS::Region}.amazonaws.com'
+      SourceArn: !Sub 'arn:aws:mobiletargeting:${AWS::Region}:${AWS::AccountId}:/apps/${ProjectId}*'
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Runtime: "python3.7"
+      Timeout: 60
+      Environment:
+        Variables:
+          PERSONALIZE_CAMPAIGN_ARN: !Ref PersonalizeCampaignArn
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import logging
+          import os
+          from botocore.exceptions import ClientError
+
+          campaign_arn = os.environ.get('PERSONALIZE_CAMPAIGN_ARN')
+
+          personalize_runtime   = boto3.client('personalize-runtime')
+          dynamodb = boto3.resource('dynamodb')
+
+          items_table = dynamodb.Table('items')
+
+          def lambda_handler(event, context):
+              logging.getLogger().setLevel('DEBUG')
+              logging.debug(json.dumps(event))
+              # Loop over each incoming Endpoint
+              for endpointId,endpoint in event['Endpoints'].items():
+                  # Get the Personalized Recommendation
+                  recommendedItemId = get_recommended_item(endpoint['User']['UserId'])
+                  # Look up Item in our Items DynamoDB Table
+                  recommendedItem = get_item(recommendedItemId)
+                  # Add the HTML and other Car Attribute value to our Endpoint Attributes for use in the Email
+                  mutate_endpoint_attributes(endpoint, recommendedItem)
+
+              # Return the Mutated Endpoints
+              return event['Endpoints']
+
+
+          def get_recommended_item(user_id):
+              # Real Personalize Call
+              # response = personalize_runtime.get_recommendations(campaignArn=campaign_arn,
+              #                                                  userId=str(user_id),
+              #                                                  numResults=1)
+
+              # Mocked Personalize Call
+              response = {
+                  'itemList': [
+                      {'itemId': '26131'}
+                  ]
+              }
+
+              itemId = response['itemList'][0]['itemId']
+              return itemId
+
+          def get_item(item_id):
+              try:
+                  # Real DynamoDB Call
+                  # response = items_table.get_item(
+                  #     Key={
+                  #         'itemId': item_id
+                  #     }
+                  # )
+
+                  # Mocked DynamoDB Call
+                  response = {
+                    'Item': {
+                        'html': '<p>We recommend a 2017 Nissan Altima for only 35972.<br />Come drive one today.</p>',
+                        'make': 'Nissan',
+                        'model': 'Altima',
+                        'year': '2017',
+                        'price': '35972'
+                      }
+                  }
+              except ClientError as e:
+                  logging.error('get_item error: %s', e)
+              else:
+                  item = response['Item']
+                  logging.debug("GetItem succeeded:")
+                  logging.debug(json.dumps(item))
+                  return item
+
+            def mutate_endpoint_attributes(endpoint, recommendedItem):
+              endpoint['Attributes']['recommended_car_html'] = [recommendedItem['html']]
+              endpoint['Attributes']['recommended_car_make'] = [recommendedItem['make']]
+              endpoint['Attributes']['recommended_car_model'] = [recommendedItem['model']]
+              endpoint['Attributes']['recommended_car_price'] = [recommendedItem['price']]
+              endpoint['Attributes']['recommended_car_year'] = [recommendedItem['year']]
