@@ -6,7 +6,7 @@ This repository provides instructions and a simple CloudFormation Template to be
 
 ## Architecture
 
-![Screenshot](diagrams/Pinpoint_Campaign_hook.png)
+![Screenshot](diagrams/Pinpoint_Campaign_Hook.png)
 
 ## Amazon Pinpoint
 
