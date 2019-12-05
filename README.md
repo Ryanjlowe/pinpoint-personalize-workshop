@@ -82,7 +82,7 @@ To set up the Amazon Pinpoint project
 
 ### Step 3: Import endpoints into a segments
 
-1. Download the sample [pinpoint-import.csv](pinpoint-import.csv) file from this repository.
+1. Download the sample [pinpoint-import.csv](https://raw.githubusercontent.com/Ryanjlowe/pinpoint-personalize-workshop/master/pinpoint-import.csv) file from this repository.
 2. Open the sample file and replace **[EMAILADDRESSHERE]** with the same email address you verified previously.
 3. Still in the Amazon Pinpoint console, in the navigation pane, choose **Segments**, then choose **Create a segment**.
 4. On the **Create a segment** screen, choose **Import a segment** at the top, then choose **Choose files**.  
@@ -92,7 +92,7 @@ To set up the Amazon Pinpoint project
 
 The next step, we will create a CampaignHook which allows us to filter and mutate the endpoints that are targeted via a Campaign.  This [developer documentation page](https://docs.aws.amazon.com/pinpoint/latest/developerguide/segments-dynamic.html) has documentation on how to do this manually which requires knowledge of the CLI and IAM permissions.  The steps below will do this automatically and deploy a Python Lambda function stub.
 
-1. Download the [CloudFormation template](PersonalizeCampaignHookTemplate.yaml) located in this repository.
+1. Download the [CloudFormation template](https://raw.githubusercontent.com/Ryanjlowe/pinpoint-personalize-workshop/master/PersonalizeCampaignHookTemplate.yaml) located in this repository.
 2. Sign into the Amazon CloudFormation console at https://console.aws.amazon.com/cloudformation/.
 3. Choose **Create stack**.
 4. Next to **Specify template**, choose **Upload a template file**, and then choose **Choose file** to upload the **PersonalizeCampaignHookTemplate.yaml** template file. Choose **Next**.
@@ -122,7 +122,7 @@ Under **Parameters**, do the following:
 ```
 {{User.UserAttributes.FirstName}}'s Personalized Car Recommendation!
 ```
-5. Copy the content of the **template.html** file located in this repository [here](template.html) and paste it into the **Message** section replacing the current contents.
+5. Copy the content of the **template.html** file located in this repository [here](https://raw.githubusercontent.com/Ryanjlowe/pinpoint-personalize-workshop/master/template.html) and paste it into the **Message** section replacing the current contents.
 
 ### Step 6: Create a Pinpoint Campaign
 
