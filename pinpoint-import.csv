@@ -1,2 +1,2 @@
-ChannelType,Id,Address,User.UserId,User.UserAttributes.FirstName,Attributes.PreferredChannel
-EMAIL,MyEndpointId1,[EMAILADDRESSHERE],151,Jane,Yes
+ChannelType,Id,Address,User.UserId,User.UserAttributes.FirstName,User.UserAttributes.SalesPerson,User.UserAttributes.SalesPersonPhone,Attributes.PreferredChannel
+EMAIL,MyEndpointId1,[EMAILADDRESSHERE],151,Jane,Jimmy Smith,555.555.5555,Yes

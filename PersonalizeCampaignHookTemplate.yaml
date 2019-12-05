@@ -10,7 +10,6 @@ Parameters:
     Description: Project ID from Amazon Pinpoint
   PersonalizeCampaignArn:
     Type: String
-    default: "arn:aws:personalize:us-west-2:250935282016:campaign/car-hrnn"
     Description: Full ARN of the configured Personalize Campaign
 
 
@@ -66,6 +65,7 @@ Resources:
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: 'PinpointPersonalizeCampaignHook'
       Handler: index.lambda_handler
       Role: !GetAtt LambdaRole.Arn
       Runtime: "python3.7"
@@ -147,9 +147,9 @@ Resources:
                   logging.debug(json.dumps(item))
                   return item
 
-            def mutate_endpoint_attributes(endpoint, recommendedItem):
-              endpoint['Attributes']['recommended_car_html'] = [recommendedItem['html']]
-              endpoint['Attributes']['recommended_car_make'] = [recommendedItem['make']]
-              endpoint['Attributes']['recommended_car_model'] = [recommendedItem['model']]
-              endpoint['Attributes']['recommended_car_price'] = [recommendedItem['price']]
-              endpoint['Attributes']['recommended_car_year'] = [recommendedItem['year']]
+          def mutate_endpoint_attributes(endpoint, recommendedItem):
+            endpoint['Attributes']['recommended_car_html'] = [recommendedItem['html']]
+            endpoint['Attributes']['recommended_car_make'] = [recommendedItem['make']]
+            endpoint['Attributes']['recommended_car_model'] = [recommendedItem['model']]
+            endpoint['Attributes']['recommended_car_price'] = [recommendedItem['price']]
+            endpoint['Attributes']['recommended_car_year'] = [recommendedItem['year']]

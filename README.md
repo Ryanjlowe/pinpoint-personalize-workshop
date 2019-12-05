@@ -93,7 +93,7 @@ To set up the Amazon Pinpoint project
 The next step, we will create a CampaignHook which allows us to filter and mutate the endpoints that are targeted via a Campaign.  This [developer documentation page](https://docs.aws.amazon.com/pinpoint/latest/developerguide/segments-dynamic.html) has documentation on how to do this manually which requires knowledge of the CLI and IAM permissions.  The steps below will do this automatically and deploy a Python Lambda function stub.
 
 1. Download the [CloudFormation template](PersonalizeCampaignHookTemplate.yaml) located in this repository.
-2. Sign into the Amazon CloudFormation console at https://.console.aws.amazon.com/cloudformation/.
+2. Sign into the Amazon CloudFormation console at https://console.aws.amazon.com/cloudformation/.
 3. Choose **Create stack**.
 4. Next to **Specify template**, choose **Upload a template file**, and then choose **Choose file** to upload the **PersonalizeCampaignHookTemplate.yaml** template file. Choose **Next**.
 5. Under **Specify stack details**, for **Stack Name**, type a name for the CloudFormation stack.
@@ -103,3 +103,39 @@ Under **Parameters**, do the following:
   2. For **PersonalizeCampaignArn**, enter your Amazon Personalize Campaign ARN copied earlier.  If you skipped Step 1, enter in **"\*"**
 7. Choose **Next**.
 8. On the next page, review your settings, and then choose **Next** again. On the final page, select the box to indicate that you understand that AWS CloudFormation will create IAM resources, and then choose **Create** and wait a few minutes for CloudFormation to deploy the required components.
+
+### Step 5: Review and Modify the Lambda Code
+
+1. Sign into the AWS Lambda console at https://console.aws.amazon.com/lambda/
+2. Choose the **PinpointPersonalizeCampaignHook** function
+3. Scroll down to the **Function code** section
+4. If you have the Cars Personalize Campaign deployed from optional step 1 above, uncomment out the code on lines 31-34 and comment out lines 37-41
+5. If you follow the bonus points step 7 below and deploy a DynamoDB table for the item suggestions, uncomment out the code on lines 48-53 and comment out lines 56-64
+6. Take note of the additional Attributes that are added to the Endpoint starting on lines 74.  These attributes do not exist in Pinpoint, but will be used to render the email.
+
+### Step 7: Create a Pinpoint template
+
+1. Sign back into the Amazon Pinpoint console at http://console.aws.amazon.com/pinpoint/.
+2. From the **Navigation Pane** choose **Message Templates** then choose **Create a template**.
+3. Select the **Email** Channel and provide a **Template Name**
+4. Enter the following subject line:
+```
+{{User.UserAttributes.FirstName}}'s Personalized Car Recommendation!
+```
+5. Copy the content of the **template.html** file located in this repository [here](template.html) and paste it into the **Message** section replacing the current contents.
+
+### Step 6: Create a Pinpoint Campaign
+
+1. From the **Navigation Pane** choose **All Projects** and select the project created from Step 2 above.
+2. From the **Navigation Pane** choose **Campaigns** and choose **Create a campaign**.
+3. Provide the campaign a name and choose **Email** channel and choose **Next**.
+4. From the **Segment** drop down, select the segment created in Step 3 and choose **Next**.
+5. Under **Message content** choose **Use an existing template** and then select the Template created in Step 7 above and choose **Next**.
+6. Choose **Next** to immediately schedule the campaign to send.
+7. Choose **Launch campaign** to send.
+
+The newly created campaign will inherit the campaign hook settings that were set up in the CloudFormation template.  The campaign will trigger the Lambda function and pass in the Endpoints it targeted for the campaign.  The Lambda function will grab the UserId from the Endpoint data and call Personalize for a realtime recommendation.  Then the Lambda function will look up the recommended item details by looking in our Item database.  Finally, it will augment the Endpoint Attributes with these values and pass them back for the email rendering engine to create and send the email.
+
+### Bonus Points Step 7: Deploy DynamoDB Table of Items
+
+1. As a bonus step, you can take the items.csv file created in Step 1 to create a product catalog of all of the recommended vehicles.  
